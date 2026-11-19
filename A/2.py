@@ -1,6 +1,6 @@
 
 import pandas as pd
-from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import *
 
 # Create Dummy Dataset
 actual = [1]*50 + [0]*450
