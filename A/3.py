@@ -1,48 +1,57 @@
 
-# 1. Import libraries
 import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.metrics import *
 
-# 2. Load dataset
-df = pd.read_csv("Admission.csv")
+# 1. Load Dataset
+df = pd.read_csv("Admission_Predict.csv")
 
-# 3. Data preprocessing
-df.drop_duplicates(inplace=True)
-df.fillna(df.mean(numeric_only=True), inplace=True)
+# 2. Data Preprocessing
+df.columns = df.columns.str.strip()
+df.drop(columns=["Serial No."], inplace=True)
+df.dropna(inplace=True)
 
-# Remove unnecessary column
-df.drop(columns=["Serial No."], errors="ignore", inplace=True)
+df["Admit"] = (df["Chance of Admit"] >= 0.5).astype(int)
 
-# Create target if dataset has Chance of Admit instead of Admitted
-if "Admitted" not in df.columns:
-    df["Admitted"] = (df["Chance of Admit "] >= 0.5).astype(int)
-    df.drop(columns=["Chance of Admit "], inplace=True)
+# 3. Separate Input and Output
+X = df[['GRE Score', 'TOEFL Score', 'University Rating',
+        'SOP', 'LOR', 'CGPA', 'Research']]
+y = df["Admit"]
 
-# Label Encoding (if categorical columns exist)
-le = LabelEncoder()
-for col in df.select_dtypes(include="object").columns:
-    df[col] = le.fit_transform(df[col])
-
-# 4. Separate features and target
-X = df.drop("Admitted", axis=1)
-y = df["Admitted"]
-
-# 5. Train-Test Split (75:25)
+# 4. Train-Test Split
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.25, random_state=42
+    X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-# 6. Apply Decision Tree Classifier
+# 5. Train Decision Tree
 model = DecisionTreeClassifier(random_state=42)
 model.fit(X_train, y_train)
 
-# 7. Prediction
+# 6. Prediction and Evaluation
 y_pred = model.predict(X_test)
 
-# 8. Model Evaluation
 print("Accuracy:", accuracy_score(y_test, y_pred))
 print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
 print("Classification Report:\n", classification_report(y_test, y_pred))
+
+# 7. Take Student Input
+student = pd.DataFrame([[
+    int(input("GRE Score: ")),
+    int(input("TOEFL Score: ")),
+    int(input("University Rating: ")),
+    float(input("SOP: ")),
+    float(input("LOR: ")),
+    float(input("CGPA: ")),
+    int(input("Research (0/1): "))
+]], columns=X.columns)
+
+result = model.predict(student)
+print("Admission:", "Yes" if result[0] == 1 else "No")
+
+# 8. Visualize Decision Tree
+plt.figure(figsize=(20, 12))
+plot_tree(model, filled=True, feature_names=X.columns,
+          class_names=['Not Admitted', 'Admitted'])
+plt.show()
