@@ -1,44 +1,39 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import *
 
 df = pd.read_csv("temperatures.csv")
 
-months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-          "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+month = input("Enter month: ").upper()
+year = int(input("Enter year: "))
 
-df[months] = df[months].fillna(df[months].mean())
+X = df[['YEAR']]
+y = df[month]
 
-X = df[["YEAR"]]
-X_train, X_test = train_test_split(X, test_size=0.25, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
 
-actual, predicted = [], []
-models = {}
+model = LinearRegression()
+model.fit(X_train, y_train)
 
-for month in months:
-    y = df[month]
-    y_train, y_test = y.loc[X_train.index], y.loc[X_test.index]
+print("Equation: Temperature =", model.intercept_, "+", model.coef_[0], "* Year")
 
-    model = LinearRegression()
-    model.fit(X_train, y_train)
-    pred = model.predict(X_test)
+prediction = model.predict(pd.DataFrame({'YEAR': [year]}))
+print("Predicted Temperature:", round(prediction[0], 2), "°C")
 
-    actual.extend(y_test)
-    predicted.extend(pred)
+y_pred = model.predict(X_test)
 
-    models[month] = model
-    print(month, "Temperature:", round(model.predict([[df["YEAR"].max() + 1]])[0], 2), "°C")
+print("MSE:", mean_squared_error(y_test, y_pred))
+print("MAE:", mean_absolute_error(y_test, y_pred))
+print("R2 Score:", r2_score(y_test, y_pred))
 
-print("\nMSE:", mean_squared_error(actual, predicted))
-print("MAE:", mean_absolute_error(actual, predicted))
-print("R2 Score:", r2_score(actual, predicted))
-
-# Visualize January temperature regression
-plt.scatter(X, df["JAN"])
-plt.plot(X, models["JAN"].predict(X), color="red")
+plt.scatter(X_test, y_test, label="Actual")
+plt.plot(X_test, y_pred, color="red", label="Predicted")
 plt.xlabel("Year")
-plt.ylabel("Temperature (°C)")
-plt.title("Linear Regression - January Temperature")
+plt.ylabel("Temperature")
+plt.title(month + " Temperature Prediction")
+plt.legend()
 plt.show()
