@@ -1,30 +1,36 @@
-# 1. Import libraries
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 
-# 2. Load dataset
-df = pd.read_csv("heart.csv")
+# Load dataset
+data = pd.read_csv("Heart.csv")
 
-# 3. Data cleaning
-df.drop_duplicates(inplace=True)
+# Data Cleaning
+data = data.drop_duplicates()
+data = data.drop(columns=['Unnamed: 0'], errors='ignore')
 
-# 4. Handle missing values
-df.fillna(df.mean(numeric_only=True), inplace=True)
+# Handle Missing Values
+for col in data.columns:
+    if data[col].isnull().sum() > 0:
+        if data[col].dtype == 'object':
+            data[col] = data[col].fillna(data[col].mode()[0])
+        else:
+            data[col] = data[col].fillna(data[col].median())
 
-# 5. Data transformation (Normalization)
-scaler = MinMaxScaler()
-df[df.select_dtypes(include='number').columns] = scaler.fit_transform(
-    df.select_dtypes(include='number')
-)
-
-# 6. Split dataset (75% training, 25% testing)
+# Train-Test Split
 train, test = train_test_split(
-    df, test_size=0.25, random_state=42
+    data, test_size=0.25, random_state=42
 )
 
-# 7. Display results
-print("Original Dataset:", df.shape)
+# Standardization
+cols = train.select_dtypes(include='number').columns
+
+scaler = StandardScaler()
+train[cols] = scaler.fit_transform(train[cols])
+test[cols] = scaler.transform(test[cols])
+
+# Display Results
 print("Training Data:", train.shape)
 print("Testing Data:", test.shape)
-print(df.head())
+print(train.head())
